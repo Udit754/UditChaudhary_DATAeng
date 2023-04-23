@@ -1,44 +1,43 @@
 import xml.etree.ElementTree as ET
 import pandas as pd
 import csv
+import boto3  
+import os
+import logging
 
+logging.basicConfig(filename='example.log', level=logging.INFO)
 # Parse the XML file
-tree = ET.parse('C:/Users/uditc/Desktop/steeleye/steeleye.xml') # Add your path to which you have stored XML file downloaded
-root = tree.getroot()
-
+try:
+    tree = ET.parse('C:/Users/uditc/Desktop/steeleye/steeleye.xml')
+    root = tree.getroot()
 # Open the CSV file for writing
-with open('myfile.csv', 'w', newline='') as csvfile:
-    writer = csv.writer(csvfile)
+    with open('myfile.csv', 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+# Write the header row
+        writer.writerow(['FinInstrmGnlAttrbts.Id', 'FinInstrmGnlAttrbts.FullNm', 'FinInstrmGnlAttrbts.ClssfctnTp', 'FinInstrmGnlAttrbts.CmmdtyDerivInd', 'FinInstrmGnlAttrbts.NtnlCcy', 'Issr'])
+# Loop through the FinancialInstrument elements and write the data rows
+        for termntd_rcrd in root.findall('.//{urn:iso:std:iso:20022:tech:xsd:auth.036.001.02}TermntdRcrd'):
+            id = termntd_rcrd.find('.//{urn:iso:std:iso:20022:tech:xsd:auth.036.001.02}Id').text
+            full_nm = termntd_rcrd.find('.//{urn:iso:std:iso:20022:tech:xsd:auth.036.001.02}FullNm').text
+            clssfctn_tp = termntd_rcrd.find('.//{urn:iso:std:iso:20022:tech:xsd:auth.036.001.02}ClssfctnTp').text
+            cmmdty_deriv_ind = termntd_rcrd.find('.//{urn:iso:std:iso:20022:tech:xsd:auth.036.001.02}CmmdtyDerivInd').text
+            ntnl_ccy = termntd_rcrd.find('.//{urn:iso:std:iso:20022:tech:xsd:auth.036.001.02}NtnlCcy').text
+            issr = termntd_rcrd.find('.//{urn:iso:std:iso:20022:tech:xsd:auth.036.001.02}Issr').text
+            writer.writerow([id, full_nm, clssfctn_tp, cmmdty_deriv_ind, ntnl_ccy, issr])
 
-    # Write the header row
-    writer.writerow(['FinInstrmGnlAttrbts.Id', 'FinInstrmGnlAttrbts.FullNm', 'FinInstrmGnlAttrbts.ClssfctnTp', 'FinInstrmGnlAttrbts.CmmdtyDerivInd', 'FinInstrmGnlAttrbts.NtnlCcy', 'Issr'])
-
-   # Loop through the FinancialInstrument elements and write the data rows
-    for termntd_rcrd in root.findall('.//{urn:iso:std:iso:20022:tech:xsd:auth.036.001.02}TermntdRcrd'):
-
-        id = termntd_rcrd.find('.//{urn:iso:std:iso:20022:tech:xsd:auth.036.001.02}Id').text
-        full_nm = termntd_rcrd.find('.//{urn:iso:std:iso:20022:tech:xsd:auth.036.001.02}FullNm').text
-        clssfctn_tp = termntd_rcrd.find('.//{urn:iso:std:iso:20022:tech:xsd:auth.036.001.02}ClssfctnTp').text
-        cmmdty_deriv_ind = termntd_rcrd.find('.//{urn:iso:std:iso:20022:tech:xsd:auth.036.001.02}CmmdtyDerivInd').text
-        ntnl_ccy = termntd_rcrd.find('.//{urn:iso:std:iso:20022:tech:xsd:auth.036.001.02}NtnlCcy').text
-        issr = termntd_rcrd.find('.//{urn:iso:std:iso:20022:tech:xsd:auth.036.001.02}Issr').text
-        writer.writerow([id, full_nm, clssfctn_tp, cmmdty_deriv_ind, ntnl_ccy, issr])
-
-
-
+    logging.info('CSV file created successfully')
+except Exception as e:
+    logging.error(f'Error occurred: {e}')
 # Store the csv in an AWS S3 bucket
 #install boto3 : allows you to directly create, update, and delete AWS resources from your Python scripts
  #uncomment while running it for the first time.
 #!pip install botocore==1.13.20
-import boto3  
-import os
+try:
 #if not able to access the access key and secret access key in case while creating USER in AWS through IAM user, 
 #then for rrot user -> through security credentials can get the credentials and define it in the environment;
 # otherwise it will throw an error. 
-os.environ['AWS_ACCESS_KEY_ID'] = 'AKIAU6C5AWQKPA7VDB3Z'
-os.environ['AWS_SECRET_ACCESS_KEY'] = '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'
-
-
+    os.environ['AWS_ACCESS_KEY_ID'] = 'AKIAU6C5AWQKBV7DQIM6'
+    os.environ['AWS_SECRET_ACCESS_KEY'] = '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'
 #To make a bucket in S3, follow steps:
 # 1. Create an account on AWS as an IAM user (if not possible, then root user).
 # 2. Click on Services, then under security-> IAM(Identity and Access Management)
@@ -90,30 +89,25 @@ os.environ['AWS_SECRET_ACCESS_KEY'] = 'KooGa28WJQMjjBsTJgAaZk2U3+eqyBz+3Y0PXp9K'
 #      Name                    Value                Type    Location
 #      ----                    -----                 ----    --------
 #      profile                <not set>             None    None
-#      access_key     ****************UXFP shared-credentials-file
-#      secret_key     ****************Vvqm shared-credentials-file
+#      access_key     **************** shared-credentials-file
+#      secret_key     **************** shared-credentials-file
 #      region US East (N. Virginia) us-east-1      config-file    ~/.aws/config
 # 7. Upload your files using python scripts
 
 # Let's use Amazon S3 -> resource is used for high level APIs and client is used for low level APIs
-s3 = boto3.resource("s3",)
-#With the Boto3 package, you have programmatic access to many AWS services such as SQS, EC2, SES, 
-#and many other services of the IAM console.
+    s3 = boto3.resource("s3")
+#bucket names
+    for bucket in s3.buckets.all():
+        logging.info(f'Bucket name: {bucket.name}')
 
-
-# Print out bucket names
-# for bucket in s3.buckets.all():
-#     print(bucket.name)
-
-
-
-s3 = boto3.client('s3')
-
-
+    s3 = boto3.client('s3')
 # to upload the file in AWS S3
-s3.upload_file(
-    Filename="C:/Users/uditc/Desktop/steeleye/myfile.csv",
-    Bucket="steeleye-s3-bucket",
-    Key="myfile.csv",
-)
+    s3.upload_file(
+        Filename="C:/Users/uditc/Desktop/steeleye/myfile.csv",
+        Bucket="steeleyes3bucket",
+        Key="myfile.csv",
+    )
 # We can successfully check under the bucket that file has uploaded.
+    logging.info('File uploaded to S3 successfully')
+except Exception as e:
+    logging.error(f'Error occurred: {e}')

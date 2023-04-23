@@ -1,0 +1,5 @@
+INFO:root:CSV file created successfully
+INFO:botocore.credentials:Found credentials in environment variables.
+INFO:root:Bucket name: steeleye-s3-bucket
+INFO:root:Bucket name: steeleyes3bucket
+INFO:root:File uploaded to S3 successfully
