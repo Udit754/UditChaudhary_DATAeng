@@ -1,5 +1,6 @@
 # UditChaudhary_DATAeng
 udit chaudhary (12008314 LPU)
+uditchaudhary754@gmail.com
 
 *) Main code file = 2nd.py
 *) Extracted csv file = myfile.csv
